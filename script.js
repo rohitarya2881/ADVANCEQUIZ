@@ -2050,136 +2050,83 @@ window.startRapidRound = () => {
 // Recent Activity - Fixed Version
 // =============================================
 
-
 async function updateRecentActivity() {
     const activityList = document.getElementById('recentActivityList');
     if (!activityList) return;
-    
+
     const results = await getQuizResults();
     
-    // Clear container
-    activityList.innerHTML = '';
-    
+    activityList.innerHTML = '';  // clear previous content
+
     if (results.length === 0) {
         activityList.innerHTML = '<div class="empty-state">No recent activity</div>';
+        // Also remove any old button
+        const oldBtn = activityList.parentNode.querySelector('.show-more-btn');
+        if (oldBtn) oldBtn.remove();
         return;
     }
-    
-    // Sort by date (newest first)
-    const sortedResults = [...results].sort((a, b) => 
-        new Date(b.date) - new Date(a.date)
-    );
-    
-    // Create activity items HTML with click handlers
-    sortedResults.forEach((r, index) => {
-        const date = new Date(r.date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        const accuracy = Math.round((r.correctAnswers / r.totalQuestions) * 100);
-        const perfectClass = accuracy === 100 ? 'perfect' : '';
-        
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.setAttribute('data-index', index);
-        activityItem.style.cursor = 'pointer'; // Make it look clickable
-        
-        activityItem.innerHTML = `
-            <div class="activity-icon">
-                <i class="fas ${accuracy >= 80 ? 'fa-star' : 'fa-question'}"></i>
-            </div>
-            <div class="activity-content">
-                <div class="activity-title">${r.folderName || 'Quiz'} - ${r.correctAnswers}/${r.totalQuestions}</div>
-                <div class="activity-time">${date}</div>
-            </div>
-            <span class="activity-badge ${perfectClass}">
-                ${accuracy}%
-            </span>
-        `;
-        
-        // Add click handler
-        activityItem.addEventListener('click', () => handleActivityClick(r));
-        
-        activityList.appendChild(activityItem);
-    });
-    
-    // Remove any existing show more button
-    const existingBtn = document.querySelector('.show-more-btn');
-    if (existingBtn) existingBtn.remove();
-    
-    // Add expand/collapse functionality if more than 5 items
+
+    // ... rest of your sorting + creating activity items ...
+
+    // After adding all items
     if (sortedResults.length > 5) {
         createExpandButton(activityList, sortedResults.length);
     } else {
-        // If 5 or fewer items, remove collapsed class
         activityList.classList.remove('collapsed');
+        const oldBtn = activityList.parentNode.querySelector('.show-more-btn');
+        if (oldBtn) oldBtn.remove();
     }
 }
-
 function createExpandButton(container, totalItems) {
-    // Create button
+    // Prevent duplicate buttons
+    const existingBtn = container.parentNode.querySelector('.show-more-btn');
+    if (existingBtn) existingBtn.remove();
+
     const showMoreBtn = document.createElement('button');
     showMoreBtn.className = 'show-more-btn';
     showMoreBtn.innerHTML = `
         <i class="fas fa-chevron-down"></i>
         <span>Show More (${totalItems - 5} more)</span>
     `;
-    
-    // Add click handler
-    showMoreBtn.addEventListener('click', function() {
-        const activityList = document.getElementById('recentActivityList');
-        const allItems = activityList.querySelectorAll('.activity-item');
+
+    // Use one source of truth: data-expanded attribute
+    showMoreBtn.dataset.expanded = "false";
+
+    showMoreBtn.addEventListener('click', function () {
+        const isExpanded = this.dataset.expanded === "true";
+        const allItems = container.querySelectorAll('.activity-item');
         const icon = this.querySelector('i');
-        const span = this.querySelector('span');
-        
-        if (!activityExpanded) {
-            // Show all items
+        const textSpan = this.querySelector('span');
+
+        if (!isExpanded) {
+            // Expand → show everything
             allItems.forEach(item => item.style.display = 'flex');
             icon.className = 'fas fa-chevron-up';
-            span.textContent = 'Show Less';
+            textSpan.textContent = 'Show Less';
+            container.classList.remove('collapsed');
+            this.dataset.expanded = "true";
             this.classList.add('expanded');
-            
-            // Remove gradient effect
-            activityList.classList.remove('collapsed');
         } else {
-            // Hide items after first 5
-            allItems.forEach((item, index) => {
-                if (index >= 5) {
-                    item.style.display = 'none';
-                } else {
-                    item.style.display = 'flex';
-                }
+            // Collapse → show only first 5
+            allItems.forEach((item, idx) => {
+                item.style.display = idx < 5 ? 'flex' : 'none';
             });
             icon.className = 'fas fa-chevron-down';
-            span.textContent = `Show More (${totalItems - 5} more)`;
+            textSpan.textContent = `Show More (${totalItems - 5} more)`;
+            container.classList.add('collapsed');
+            this.dataset.expanded = "false";
             this.classList.remove('expanded');
-            
-            // Add gradient effect
-            activityList.classList.add('collapsed');
         }
-        
-        activityExpanded = !activityExpanded;
     });
-    
-    // Add button after container
+
+    // Append button
     container.parentNode.appendChild(showMoreBtn);
-    
-    // Get all items
+
+    // Initial collapsed state
     const allItems = container.querySelectorAll('.activity-item');
-    
-    // Initially hide items after first 5
-    allItems.forEach((item, index) => {
-        if (index >= 5) {
-            item.style.display = 'none';
-        } else {
-            item.style.display = 'flex';
-        }
+    allItems.forEach((item, idx) => {
+        item.style.display = idx < 5 ? 'flex' : 'none';
     });
-    
-    // Add collapsed class for gradient effect
     container.classList.add('collapsed');
 }
 // =============================================
