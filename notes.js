@@ -89,7 +89,270 @@ function resetNotesData() {
 function saveNotesData() {
     localStorage.setItem('quizNotes', JSON.stringify(notesData));
 }
+// ONE FUNCTION TO RULE THEM ALL - Add this to notes.js
+function adjustFooterPosition() {
+    const footer = document.querySelector('.glass-footer');
+    const notesContainer = document.getElementById('notesContainer');
+    
+    if (!footer) return;
+    
+    // If notes are visible, push footer down
+    if (notesContainer && !notesContainer.classList.contains('hidden')) {
+        // Get the height of the notes container
+        const notesHeight = notesContainer.offsetHeight;
+        const windowHeight = window.innerHeight;
+        const footerHeight = footer.offsetHeight;
+        
+        // Calculate if notes + footer would overflow
+        const totalHeight = notesContainer.offsetTop + notesHeight + footerHeight;
+        
+        if (totalHeight > windowHeight) {
+            // Footer will naturally be at bottom, no need to adjust
+            footer.style.position = 'relative';
+            footer.style.marginTop = '40px';
+        } else {
+            // Push footer to bottom using margin
+            const extraSpace = windowHeight - (notesContainer.offsetTop + notesHeight + 40);
+            if (extraSpace > 0) {
+                footer.style.marginTop = extraSpace + 'px';
+            } else {
+                footer.style.marginTop = '40px';
+            }
+        }
+    } else {
+        // Reset footer when notes are hidden
+        footer.style.position = 'relative';
+        footer.style.marginTop = '40px';
+    }
+}
 
+// Call it whenever notes are shown
+window.showNotes = function() {
+    console.log("showNotes function called");
+    
+    // Hide other containers
+    const quizSelection = document.getElementById("quizSelection");
+    const quizContainer = document.getElementById("quizContainer");
+    const flashcardContainer = document.getElementById("flashcardContainer");
+    const analysisContainer = document.getElementById("analysisContainer");
+    
+    if (quizSelection) quizSelection.classList.remove("active");
+    if (quizContainer) quizContainer.classList.add("hidden");
+    if (flashcardContainer) flashcardContainer.classList.add("hidden");
+    if (analysisContainer) analysisContainer.classList.add("hidden");
+    
+    // Remove any existing notes container
+    const existingNotes = document.getElementById('notesContainer');
+    if (existingNotes) {
+        existingNotes.remove();
+    }
+    
+    // Get today's date
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get today's note or create default
+    let todayNote = notesData.entries[today];
+    if (!todayNote) {
+        todayNote = {
+            content: '',
+            category: 'Daily Goals',
+            completed: [],
+            mood: 'neutral',
+            lastModified: new Date().toISOString()
+        };
+        notesData.entries[today] = todayNote;
+        saveNotesData();
+    }
+    
+    // Get streak data
+    const streak = calculateStreak();
+    
+    // Create notes container
+    const notesContainer = document.createElement('div');
+    notesContainer.id = 'notesContainer';
+    notesContainer.className = 'notes-container';
+    
+    // Build HTML
+    notesContainer.innerHTML = `
+        <div class="notes-header">
+            <h2>📝 Learning Journal & Goals</h2>
+            <div class="notes-controls">
+                <button class="notes-btn" onclick="exportNotes()">
+                    <span>📥</span> Export
+                </button>
+                <button class="notes-btn" onclick="importNotes()">
+                    <span>📤</span> Import
+                </button>
+                <button class="notes-btn" onclick="closeNotes()">
+                    <span>✖</span> Close
+                </button>
+            </div>
+        </div>
+        
+        <div class="notes-grid">
+            <!-- Left Column - Calendar & Stats -->
+            <div class="notes-left-col">
+                <div class="notes-stats-card">
+                    <h3>🔥 Streak Stats</h3>
+                    <div class="streak-display" id="streakDisplay">
+                        ${renderStreakDisplay(streak)}
+                    </div>
+                </div>
+                
+                <div class="notes-calendar-card">
+                    <h3>📅 Journal Calendar</h3>
+                    <div class="calendar-header">
+                        <button class="calendar-nav" onclick="changeMonth(-1)">←</button>
+                        <span id="currentMonthYear"></span>
+                        <button class="calendar-nav" onclick="changeMonth(1)">→</button>
+                    </div>
+                    <div id="notesCalendar" class="notes-calendar"></div>
+                    <div class="calendar-legend">
+                        <span><span class="legend-dot has-note"></span> Has Notes</span>
+                        <span><span class="legend-dot today"></span> Today</span>
+                        <span><span class="legend-dot selected"></span> Selected</span>
+                    </div>
+                </div>
+                
+                <div class="notes-quick-stats">
+                    <h4>📊 Category Stats</h4>
+                    <div class="quick-stats-grid" id="quickStatsGrid">
+                        ${renderQuickStats()}
+                    </div>
+                </div>
+                
+                <div class="notes-tips-card">
+                    <h4>💡 Quick Tips</h4>
+                    <ul class="tips-list">
+                        <li>Write daily goals to stay focused</li>
+                        <li>Track completed tasks for motivation</li>
+                        <li>Reflect on what you learned</li>
+                        <li>Celebrate your achievements</li>
+                        <li>Use Ctrl+S to save quickly</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Right Column - Note Editor -->
+            <div class="notes-right-col">
+                <div class="notes-editor-card">
+                    <div class="editor-header">
+                        <h3 id="editorDateTitle">${formatDate(today)}</h3>
+                        <div class="editor-controls">
+                            <select id="noteCategory" class="category-select">
+                                ${notesData.categories.map(cat => 
+                                    `<option value="${cat}" ${cat === todayNote.category ? 'selected' : ''}>${cat}</option>`
+                                ).join('')}
+                            </select>
+                            <div class="mood-selector">
+                                <span class="mood-emoji ${todayNote.mood === 'happy' ? 'selected' : ''}" onclick="setMood('happy')" title="Happy">😊</span>
+                                <span class="mood-emoji ${todayNote.mood === 'neutral' ? 'selected' : ''}" onclick="setMood('neutral')" title="Neutral">😐</span>
+                                <span class="mood-emoji ${todayNote.mood === 'productive' ? 'selected' : ''}" onclick="setMood('productive')" title="Productive">💪</span>
+                                <span class="mood-emoji ${todayNote.mood === 'tired' ? 'selected' : ''}" onclick="setMood('tired')" title="Tired">😴</span>
+                                <span class="mood-emoji ${todayNote.mood === 'excited' ? 'selected' : ''}" onclick="setMood('excited')" title="Excited">🎉</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="todo-list-section">
+                        <h4>✅ Completed Tasks Today</h4>
+                        <div class="todo-input-group">
+                            <input type="text" id="newTodoInput" placeholder="Add a task you completed..." class="todo-input">
+                            <button class="todo-add-btn" onclick="addTodo()">Add</button>
+                        </div>
+                        <div id="todoList" class="todo-list">
+                            ${renderTodoList(todayNote.completed || [])}
+                        </div>
+                    </div>
+                    
+                    <div class="notes-textarea-section">
+                        <h4 id="textareaCategoryTitle">${todayNote.category} - Notes</h4>
+                        <textarea 
+                            id="noteContent" 
+                            class="notes-textarea" 
+                            placeholder="Write your thoughts, goals, achievements, or anything you want to remember..."
+                            rows="8">${todayNote.content || ''}</textarea>
+                    </div>
+                    
+                    <div class="editor-footer">
+                        <div class="word-count" id="wordCount">
+                            Words: ${countWords(todayNote.content || '')}
+                        </div>
+                        <div class="editor-buttons">
+                            <button class="notes-save-btn" onclick="saveCurrentNote()">
+                                <span>💾</span> Save Now
+                            </button>
+                            <button class="notes-clear-btn" onclick="clearTodayNote()">
+                                <span>🗑️</span> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Notes Section -->
+                <div class="recent-notes-card">
+                    <h4>📚 Recent Entries</h4>
+                    <div id="recentNotesList" class="recent-notes-list">
+                        ${renderRecentNotes()}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Append to main content
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.appendChild(notesContainer);
+    }
+    
+    // Initialize components
+    initNotes();
+    renderNotesCalendar();
+    
+    // ADJUST FOOTER POSITION
+    setTimeout(() => {
+        adjustFooterPosition();
+    }, 100);
+    
+    // Also adjust on window resize
+    window.addEventListener('resize', adjustFooterPosition);
+    
+    console.log("Notes container created and footer adjusted");
+}
+
+// Update closeNotes function
+window.closeNotes = function() {
+    const notesContainer = document.getElementById('notesContainer');
+    if (notesContainer) {
+        notesContainer.remove();
+    }
+    
+    // Show main container and quiz selection
+    const quizSelection = document.getElementById('quizSelection');
+    if (quizSelection) {
+        quizSelection.classList.add('active');
+    }
+    
+    // Hide any other containers
+    const quizContainer = document.getElementById("quizContainer");
+    const flashcardContainer = document.getElementById("flashcardContainer");
+    const analysisContainer = document.getElementById("analysisContainer");
+    
+    if (quizContainer) quizContainer.classList.add("hidden");
+    if (flashcardContainer) flashcardContainer.classList.add("hidden");
+    if (analysisContainer) analysisContainer.classList.add("hidden");
+    
+    // RESET FOOTER
+    const footer = document.querySelector('.glass-footer');
+    if (footer) {
+        footer.style.position = 'relative';
+        footer.style.marginTop = '40px';
+    }
+    
+    // Remove resize listener
+    window.removeEventListener('resize', adjustFooterPosition);
+}
 // Main function to show notes interface - FIXED
 function showNotes() {
     console.log("showNotes function called"); // Debug log
