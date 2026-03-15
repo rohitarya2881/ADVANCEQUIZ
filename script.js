@@ -789,7 +789,77 @@ function restartQuiz() {
     }
 }
 
+// function goHome() {
+//     // Clear any active timers
+//     if (quizTimer) {
+//         clearInterval(quizTimer);
+//         quizTimer = null;
+//     }
+//     if (flashcardInterval) {
+//         clearInterval(flashcardInterval);
+//         flashcardInterval = null;
+//     }
+    
+//     // Hide all containers
+//     const quizContainer = document.getElementById("quizContainer");
+//     const flashcardContainer = document.getElementById("flashcardContainer");
+//     const analysisContainer = document.getElementById("analysisContainer");
+//     const notesContainer = document.getElementById("notesContainer");
+//     const difficultView = document.getElementById("difficultView");
+    
+//     if (quizContainer) quizContainer.classList.add("hidden");
+//     if (flashcardContainer) flashcardContainer.classList.add("hidden");
+//     if (analysisContainer) analysisContainer.classList.add("hidden");
+//     if (notesContainer) notesContainer.classList.add("hidden");
+//     if (difficultView) difficultView.remove();
+    
+//     // Show quiz selection
+//     document.getElementById("quizSelection")?.classList.add("active");
+    
+//     // Reset quiz state completely
+//     currentQuiz = [];
+//     currentQuestionIndex = 0;
+//     score = 0;
+//     incorrectQuestions = [];
+//     quizMode = "";
+//     questionTimes = [];
+//     totalQuizTime = 0;
+    
+//     // Update folder selection UI
+//     if (currentFolder && quizzes[currentFolder]) {
+//         const totalQuestions = quizzes[currentFolder].length;
+//         document.getElementById("totalQuestions").textContent = totalQuestions;
+//         document.getElementById("totalQuestionsStat").textContent = totalQuestions;
+        
+//         const startIndex = document.getElementById("startIndex");
+//         const endIndex = document.getElementById("endIndex");
+        
+//         if (startIndex) {
+//             startIndex.max = totalQuestions;
+//             startIndex.value = 1;
+//         }
+        
+//         if (endIndex) {
+//             endIndex.max = totalQuestions;
+//             endIndex.value = totalQuestions;
+//         }
+//     }
+    
+//     // Update stats
+//     updateStats();
+//     updateRecentActivity();
+    
+//     showToast("Welcome back!", 'info');
+// }
+
+
 function goHome() {
+    // Remove notes container if it exists
+    const notesContainer = document.getElementById('notesContainer');
+    if (notesContainer) {
+        notesContainer.remove();
+    }
+    
     // Clear any active timers
     if (quizTimer) {
         clearInterval(quizTimer);
@@ -804,13 +874,11 @@ function goHome() {
     const quizContainer = document.getElementById("quizContainer");
     const flashcardContainer = document.getElementById("flashcardContainer");
     const analysisContainer = document.getElementById("analysisContainer");
-    const notesContainer = document.getElementById("notesContainer");
     const difficultView = document.getElementById("difficultView");
     
     if (quizContainer) quizContainer.classList.add("hidden");
     if (flashcardContainer) flashcardContainer.classList.add("hidden");
     if (analysisContainer) analysisContainer.classList.add("hidden");
-    if (notesContainer) notesContainer.classList.add("hidden");
     if (difficultView) difficultView.remove();
     
     // Show quiz selection
@@ -845,14 +913,15 @@ function goHome() {
         }
     }
     
+    // RESET ACTIVITY EXPAND STATE
+    resetActivityExpand();
+    
     // Update stats
     updateStats();
     updateRecentActivity();
     
     showToast("Welcome back!", 'info');
 }
-
-
 
 
 
