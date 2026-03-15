@@ -3054,3 +3054,120 @@ body.dark-theme {
         flex: 1;
     }
 }
+
+
+
+
+@media (max-width: 480px) {
+    .results-header h2 {
+        font-size: 1.6rem;
+    }
+    
+    .score-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .score-number {
+        font-size: 2rem;
+    }
+    
+    .score-total {
+        font-size: 0.9rem;
+    }
+    
+    .accuracy-text {
+        font-size: 1rem;
+    }
+    
+    /* Stats grid - single row with three columns */
+    .results-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    
+    .results-stats .stat-card {
+        padding: 8px 4px;
+    }
+    
+    .results-stats .stat-card i {
+        font-size: 1.2rem;
+    }
+    
+    .results-stats .stat-card .stat-label {
+        font-size: 0.6rem;
+    }
+    
+    .results-stats .stat-card .stat-value {
+        font-size: 0.9rem;
+    }
+    
+    /* Timing grid */
+    .timing-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+    
+    .timing-item {
+        padding: 4px 2px;
+    }
+    
+    .timing-item span:first-child {
+        font-size: 0.65rem;
+    }
+    
+    .timing-item span:last-child {
+        font-size: 0.75rem;
+    }
+    
+    /* Results actions */
+    .results-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .results-actions .primary-btn,
+    .results-actions .secondary-btn {
+        width: 100%;
+        padding: 14px;
+    }
+}
+
+/* Small phones */
+@media (max-width: 360px) {
+    .results-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+    }
+    
+    .results-stats .stat-card {
+        padding: 6px 2px;
+    }
+    
+    .results-stats .stat-card .stat-label {
+        font-size: 0.55rem;
+    }
+    
+    .results-stats .stat-card .stat-value {
+        font-size: 0.8rem;
+    }
+    
+    .timing-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .incorrect-item {
+        padding: 12px;
+    }
+    
+    .incorrect-item .question {
+        font-size: 0.95rem;
+    }
+    
+    .incorrect-item .wrong-answer,
+    .incorrect-item .correct-answer,
+    .incorrect-item .explanation {
+        font-size: 0.85rem;
+        padding: 6px 8px;
+    }
+}
