@@ -14,6 +14,7 @@ let quizMode = ""; // Current quiz mode
 let questionStartTime = 0; // For timing questions
 let questionTimes = []; // Array to store time per question
 let totalQuizTime = 0; // Total quiz time
+let activityExpanded = false; // Track expand/collapse state for recent activity
 
 // Timer Variables
 let quizTimer = null;
@@ -2067,3 +2068,276 @@ window.startRapidRound = () => {
         showToast("Rapid Round module not loaded", 'warning');
     }
 };
+
+// =============================================
+// Recent Activity Click Handler
+// =============================================
+
+function handleActivityClick(result) {
+    // Hide current view
+    document.getElementById("quizSelection")?.classList.remove("active");
+    
+    // Show quiz container
+    const quizContainer = document.getElementById("quizContainer");
+    quizContainer.classList.remove("hidden");
+    
+    // Get the questions for this quiz result
+    const folderQuestions = quizzes[result.folderName];
+    if (!folderQuestions) {
+        showToast("Folder not found!", 'error');
+        return;
+    }
+    
+    // Prepare the quiz data based on the result
+    let questionsToShow = [];
+    
+    if (result.correctQuestionIds && result.correctQuestionIds.length > 0) {
+        // If we have specific question IDs, use those
+        questionsToShow = folderQuestions.filter((_, index) => 
+            result.correctQuestionIds.includes(index)
+        );
+    } else {
+        // Otherwise, take a slice based on start/end indices
+        const start = result.startIndex ? result.startIndex - 1 : 0;
+        const end = result.endIndex || folderQuestions.length;
+        questionsToShow = folderQuestions.slice(start, end);
+    }
+    
+    // Set up the quiz
+    currentQuiz = questionsToShow.map(q => ({ ...q }));
+    currentQuestionIndex = 0;
+    score = result.correctAnswers || 0;
+    questionTimes = result.questionTimes || [];
+    totalQuizTime = result.timeTaken || 0;
+    quizMode = "review"; // Special mode for review
+    
+    // Update UI
+    document.getElementById("total-questions").textContent = currentQuiz.length;
+    document.getElementById("current-question").textContent = "1";
+    
+    // Reset progress bar
+    updateQuizProgress();
+    
+    // Load the first question
+    loadQuestionForReview();
+    
+    showToast(`Reviewing quiz from ${new Date(result.date).toLocaleDateString()}`, 'info');
+}
+
+function loadQuestionForReview() {
+    if (currentQuestionIndex >= currentQuiz.length) {
+        showResults();
+        return;
+    }
+
+    const questionData = currentQuiz[currentQuestionIndex];
+
+    // Update progress
+    document.getElementById("current-question").textContent = currentQuestionIndex + 1;
+    document.getElementById("total-questions").textContent = currentQuiz.length;
+    updateQuizProgress();
+
+    // Show question
+    document.getElementById("question-text").textContent = questionData.question;
+
+    // Clear and create options
+    const optionsContainer = document.getElementById("options");
+    optionsContainer.innerHTML = "";
+
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    
+    questionData.options.forEach((optionText, index) => {
+        const button = document.createElement("button");
+        button.classList.add("option-btn");
+        
+        // Check if this was the selected answer in the original quiz
+        const wasSelected = questionData.selectedAnswer === optionText;
+        const isCorrect = index === questionData.correctIndex;
+        
+        button.innerHTML = `
+            <span class="option-prefix">${letters[index]}</span>
+            <span class="option-text">${optionText}</span>
+        `;
+        
+        // Show feedback based on original quiz
+        if (wasSelected) {
+            if (isCorrect) {
+                button.classList.add("correct");
+            } else {
+                button.classList.add("incorrect");
+            }
+        } else if (isCorrect && wasSelected !== undefined) {
+            // Highlight correct answer if user got it wrong
+            button.classList.add("correct");
+        }
+        
+        button.disabled = true; // Disable for review mode
+        
+        optionsContainer.appendChild(button);
+    });
+    
+    // Add navigation buttons for review mode
+    const footer = document.querySelector('.quiz-footer');
+    footer.innerHTML = `
+        <div style="display: flex; gap: 10px; width: 100%; justify-content: center;">
+            <button class="secondary-btn" onclick="previousReviewQuestion()" ${currentQuestionIndex === 0 ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <button class="primary-btn" onclick="nextReviewQuestion()" ${currentQuestionIndex === currentQuiz.length - 1 ? 'disabled' : ''}>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+            <button class="secondary-btn" onclick="goHome()">
+                <i class="fas fa-home"></i> Home
+            </button>
+        </div>
+    `;
+}
+
+function previousReviewQuestion() {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        loadQuestionForReview();
+    }
+}
+
+function nextReviewQuestion() {
+    if (currentQuestionIndex < currentQuiz.length - 1) {
+        currentQuestionIndex++;
+        loadQuestionForReview();
+    }
+}
+
+async function updateRecentActivity() {
+    const activityList = document.getElementById('recentActivityList');
+    if (!activityList) return;
+    
+    const results = await getQuizResults();
+    
+    // Clear container
+    activityList.innerHTML = '';
+    
+    if (results.length === 0) {
+        activityList.innerHTML = '<div class="empty-state">No recent activity</div>';
+        return;
+    }
+    
+    // Sort by date (newest first)
+    const sortedResults = [...results].sort((a, b) => 
+        new Date(b.date) - new Date(a.date)
+    );
+    
+    // Create activity items HTML with click handlers
+    sortedResults.forEach((r, index) => {
+        const date = new Date(r.date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const accuracy = Math.round((r.correctAnswers / r.totalQuestions) * 100);
+        const perfectClass = accuracy === 100 ? 'perfect' : '';
+        
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        activityItem.setAttribute('data-index', index);
+        activityItem.style.cursor = 'pointer'; // Make it look clickable
+        
+        activityItem.innerHTML = `
+            <div class="activity-icon">
+                <i class="fas ${accuracy >= 80 ? 'fa-star' : 'fa-question'}"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-title">${r.folderName || 'Quiz'} - ${r.correctAnswers}/${r.totalQuestions}</div>
+                <div class="activity-time">${date}</div>
+            </div>
+            <span class="activity-badge ${perfectClass}">
+                ${accuracy}%
+            </span>
+        `;
+        
+        // Add click handler
+        activityItem.addEventListener('click', () => handleActivityClick(r));
+        
+        activityList.appendChild(activityItem);
+    });
+    
+    // Remove any existing show more button
+    const existingBtn = document.querySelector('.show-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    // Add expand/collapse functionality if more than 5 items
+    if (sortedResults.length > 5) {
+        createExpandButton(activityList, sortedResults.length);
+    } else {
+        // If 5 or fewer items, remove collapsed class
+        activityList.classList.remove('collapsed');
+    }
+}
+
+function createExpandButton(container, totalItems) {
+    // Create button
+    const showMoreBtn = document.createElement('button');
+    showMoreBtn.className = 'show-more-btn';
+    showMoreBtn.innerHTML = `
+        <i class="fas fa-chevron-down"></i>
+        <span>Show More (${totalItems - 5} more)</span>
+    `;
+    
+    // Add click handler
+    showMoreBtn.addEventListener('click', function() {
+        const activityList = document.getElementById('recentActivityList');
+        const allItems = activityList.querySelectorAll('.activity-item');
+        const icon = this.querySelector('i');
+        const span = this.querySelector('span');
+        
+        if (!activityExpanded) {
+            // Show all items
+            allItems.forEach(item => item.style.display = 'flex');
+            icon.className = 'fas fa-chevron-up';
+            span.textContent = 'Show Less';
+            this.classList.add('expanded');
+            
+            // Remove gradient effect
+            activityList.classList.remove('collapsed');
+        } else {
+            // Hide items after first 5
+            allItems.forEach((item, index) => {
+                if (index >= 5) {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = 'flex';
+                }
+            });
+            icon.className = 'fas fa-chevron-down';
+            span.textContent = `Show More (${totalItems - 5} more)`;
+            this.classList.remove('expanded');
+            
+            // Add gradient effect
+            activityList.classList.add('collapsed');
+        }
+        
+        activityExpanded = !activityExpanded;
+    });
+    
+    // Add button after container
+    container.parentNode.appendChild(showMoreBtn);
+    
+    // Get all items
+    const allItems = container.querySelectorAll('.activity-item');
+    
+    // Initially hide items after first 5
+    allItems.forEach((item, index) => {
+        if (index >= 5) {
+            item.style.display = 'none';
+        } else {
+            item.style.display = 'flex';
+        }
+    });
+    
+    // Add collapsed class for gradient effect
+    container.classList.add('collapsed');
+}
+window.handleActivityClick = handleActivityClick;
+window.previousReviewQuestion = previousReviewQuestion;
+window.nextReviewQuestion = nextReviewQuestion;
