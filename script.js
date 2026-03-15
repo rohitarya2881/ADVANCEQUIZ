@@ -852,7 +852,6 @@ function restartQuiz() {
 //     showToast("Welcome back!", 'info');
 // }
 
-
 function goHome() {
     // Remove notes container if it exists
     const notesContainer = document.getElementById('notesContainer');
@@ -913,16 +912,15 @@ function goHome() {
         }
     }
     
-    // RESET ACTIVITY EXPAND STATE
+    // ✅ YEH LINE ADD KARO
     resetActivityExpand();
     
     // Update stats
     updateStats();
-    updateRecentActivity();
+    updateRecentActivity();  // ✅ YEH LINE BHI HONI CHAHIYE
     
     showToast("Welcome back!", 'info');
 }
-
 
 
 
@@ -1897,43 +1895,7 @@ async function updateStats() {
     }
 }
 
-async function updateRecentActivity() {
-    const activityList = document.getElementById('recentActivityList');
-    if (!activityList) return;
-    
-    const results = await getQuizResults();
-    
-    if (results.length === 0) {
-        activityList.innerHTML = '<div class="empty-state">No recent activity</div>';
-        return;
-    }
-    
-    const recent = results.slice(-5).reverse();
-    
-    activityList.innerHTML = recent.map(r => {
-        const date = new Date(r.date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        return `
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas fa-question"></i>
-                </div>
-                <div class="activity-content">
-                    <div class="activity-title">${r.folderName} - ${r.correctAnswers}/${r.totalQuestions}</div>
-                    <div class="activity-time">${date}</div>
-                </div>
-                <span class="activity-badge ${r.correctAnswers === r.totalQuestions ? 'perfect' : ''}">
-                    ${Math.round((r.correctAnswers/r.totalQuestions)*100)}%
-                </span>
-            </div>
-        `;
-    }).join('');
-}
+
 
 function updateFrequentFoldersList() {
     const container = document.getElementById('frequentFolders');
@@ -1958,7 +1920,88 @@ function updateFrequentFoldersList() {
 // =============================================
 // Celebration Functions
 // =============================================
-
+// Line around 1710 - Update this section
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        await initDB();
+        await loadQuizzes();
+        
+        // Load theme
+        const savedTheme = localStorage.getItem("quizTheme");
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.body.classList.add('dark-theme');
+        }
+        
+        // Update UI
+        updateFolderList();
+        updateMedalDisplay();
+        updateFrequentFoldersList();
+        await updateRecentActivity();  // ✅ YEH LINE HONI CHAHIYE
+        
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Check birthday
+        checkBirthday();
+        
+        // Check for new day
+        checkForNewDay();
+        
+        // Back to top button visibility
+        window.addEventListener('scroll', () => {
+            const backToTop = document.querySelector('.back-to-top');
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+        
+        console.log("QuizMaster Pro initialized successfully!");
+        
+    } catch (error) {
+        console.error("Initialization error:", error);
+        showToast("Error initializing app. Please refresh.", 'error');
+    }
+});
+// Reset expand state when going home or switching views
+function resetActivityExpand() {
+    activityExpanded = false;
+    const container = document.getElementById('recentActivityList');
+    if (!container) return;
+    
+    // Remove collapsed class
+    container.classList.remove('collapsed');
+    
+    // Get all items
+    const allItems = container.querySelectorAll('.activity-item');
+    
+    // Show all items temporarily to reset
+    allItems.forEach(item => item.style.display = 'flex');
+    
+    // Get total items
+    const totalItems = allItems.length;
+    
+    // If more than 5, hide extras and show button
+    if (totalItems > 5) {
+        allItems.forEach((item, index) => {
+            if (index >= 5) {
+                item.style.display = 'none';
+            }
+        });
+        container.classList.add('collapsed');
+        
+        // Update button if exists
+        const btn = document.querySelector('.show-more-btn');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            const span = btn.querySelector('span');
+            if (icon) icon.className = 'fas fa-chevron-down';
+            if (span) span.textContent = `Show More (${totalItems - 5} more)`;
+            btn.classList.remove('expanded');
+        }
+    }
+}
 function triggerHighAccuracyCelebration() {
     // Confetti
     const duration = 3000;
@@ -2410,3 +2453,5 @@ function createExpandButton(container, totalItems) {
 window.handleActivityClick = handleActivityClick;
 window.previousReviewQuestion = previousReviewQuestion;
 window.nextReviewQuestion = nextReviewQuestion;
+window.resetActivityExpand = resetActivityExpand;  // ✅ YEH ADD KARO
+
