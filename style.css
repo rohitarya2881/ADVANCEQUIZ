@@ -3183,3 +3183,212 @@ body.dark-theme {
 #restoreOrderBtn i {
     margin-right: 5px;
 }
+/* =============================================
+   Recent Activity - Expandable Container
+   ============================================= */
+
+.recent-activity {
+    padding: 24px;
+    position: relative;
+}
+
+.recent-activity h3 {
+    margin-bottom: 16px;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.activity-count-badge {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.activity-list.collapsed {
+    max-height: 250px;
+    overflow-y: hidden;
+    position: relative;
+}
+
+.activity-list.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.9));
+    pointer-events: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.dark-theme .activity-list.collapsed::after {
+    background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.95));
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+    animation: slideInActivity 0.3s ease;
+}
+
+@keyframes slideInActivity {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.dark-theme .activity-item {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.activity-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateX(5px);
+}
+
+.activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0; /* For text ellipsis */
+}
+
+.activity-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.95rem;
+}
+
+.activity-time {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.activity-badge {
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+}
+
+.activity-badge.perfect {
+    background: var(--secondary-color);
+    color: white;
+}
+
+/* Show More/Less Button */
+.show-more-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 16px;
+    background: none;
+    border: 1px dashed var(--primary-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.show-more-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-style: solid;
+    transform: translateY(-2px);
+}
+
+.show-more-btn i {
+    transition: transform 0.3s ease;
+}
+
+.show-more-btn.expanded i {
+    transform: rotate(180deg);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+    font-style: italic;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: var(--border-radius);
+}
+
+.dark-theme .empty-state {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .activity-item {
+        padding: 10px;
+    }
+    
+    .activity-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+    
+    .activity-title {
+        font-size: 0.85rem;
+    }
+    
+    .activity-time {
+        font-size: 0.7rem;
+    }
+    
+    .activity-badge {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+    }
+    
+    .show-more-btn {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+}
