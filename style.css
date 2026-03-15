@@ -3171,3 +3171,15 @@ body.dark-theme {
         padding: 6px 8px;
     }
 }
+
+/* Add this at the end of your style.css */
+#restoreOrderBtn {
+    margin-top: 5px;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+#restoreOrderBtn i {
+    margin-right: 5px;
+}
