@@ -917,7 +917,7 @@ function goHome() {
     
     // Update stats
     updateStats();
-    await updateRecentActivity();  // ✅ YEH LINE BHI HONI CHAHIYE
+    updateRecentActivity();  // ✅ YEH LINE BHI HONI CHAHIYE
     
     showToast("Welcome back!", 'info');
 }
@@ -1917,8 +1917,91 @@ function updateFrequentFoldersList() {
     `).join('');
 }
 
+// =============================================
+// Celebration Functions
+// =============================================
+// Line around 1710 - Update this section
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        await initDB();
+        await loadQuizzes();
+        
+        // Load theme
+        const savedTheme = localStorage.getItem("quizTheme");
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.body.classList.add('dark-theme');
+        }
+        
+        // Update UI
+        updateFolderList();
+        updateMedalDisplay();
+        updateFrequentFoldersList();
+        await updateRecentActivity();  // ✅ YEH LINE HONI CHAHIYE
+        
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Check birthday
+        checkBirthday();
+        
+        // Check for new day
+        checkForNewDay();
+        
+        // Back to top button visibility
+        window.addEventListener('scroll', () => {
+            const backToTop = document.querySelector('.back-to-top');
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+        
+        console.log("QuizMaster Pro initialized successfully!");
+        
+    } catch (error) {
+        console.error("Initialization error:", error);
+        showToast("Error initializing app. Please refresh.", 'error');
+    }
+});
 // Reset expand state when going home or switching views
-
+function resetActivityExpand() {
+    activityExpanded = false;
+    const container = document.getElementById('recentActivityList');
+    if (!container) return;
+    
+    // Remove collapsed class
+    container.classList.remove('collapsed');
+    
+    // Get all items
+    const allItems = container.querySelectorAll('.activity-item');
+    
+    // Show all items temporarily to reset
+    allItems.forEach(item => item.style.display = 'flex');
+    
+    // Get total items
+    const totalItems = allItems.length;
+    
+    // If more than 5, hide extras and show button
+    if (totalItems > 5) {
+        allItems.forEach((item, index) => {
+            if (index >= 5) {
+                item.style.display = 'none';
+            }
+        });
+        container.classList.add('collapsed');
+        
+        // Update button if exists
+        const btn = document.querySelector('.show-more-btn');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            const span = btn.querySelector('span');
+            if (icon) icon.className = 'fas fa-chevron-down';
+            if (span) span.textContent = `Show More (${totalItems - 5} more)`;
+            btn.classList.remove('expanded');
+        }
+    }
+}
 function triggerHighAccuracyCelebration() {
     // Confetti
     const duration = 3000;
@@ -1987,15 +2070,8 @@ function showAchievementNotification(title, message, icon) {
 // Initialization
 // =============================================
 
-// =============================================
-// CORRECTED INITIALIZATION - ONLY ONE LISTENER
-// =============================================
-
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        console.log("🚀 Initializing QuizMaster Pro...");
-        
-        // Initialize database
         await initDB();
         await loadQuizzes();
         
@@ -2005,18 +2081,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.body.classList.add('dark-theme');
         }
         
-        // Update UI components
+        // Update UI
         updateFolderList();
         updateMedalDisplay();
         updateFrequentFoldersList();
-        
-        // ✅ IMPORTANT: Update recent activity - YAHI SE CALL HOGA
-        console.log("📊 Loading recent activity...");
         await updateRecentActivity();
         
         // Set current year in footer
-        const yearElement = document.getElementById('current-year');
-        if (yearElement) yearElement.textContent = new Date().getFullYear();
+        document.getElementById('current-year').textContent = new Date().getFullYear();
         
         // Check birthday
         checkBirthday();
@@ -2027,23 +2099,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Back to top button visibility
         window.addEventListener('scroll', () => {
             const backToTop = document.querySelector('.back-to-top');
-            if (backToTop) {
-                if (window.scrollY > 300) {
-                    backToTop.classList.add('visible');
-                } else {
-                    backToTop.classList.remove('visible');
-                }
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
             }
         });
         
-        console.log("✅ QuizMaster Pro initialized successfully!");
-        console.log(`📁 Found ${Object.keys(quizzes).length} folders`);
+        console.log("QuizMaster Pro initialized successfully!");
         
     } catch (error) {
-        console.error("❌ Initialization error:", error);
+        console.error("Initialization error:", error);
         showToast("Error initializing app. Please refresh.", 'error');
     }
 });
+
 function checkBirthday() {
     const today = new Date();
     const birthday = localStorage.getItem('userBirthday');
@@ -2249,6 +2319,73 @@ function nextReviewQuestion() {
     }
 }
 
+async function updateRecentActivity() {
+    const activityList = document.getElementById('recentActivityList');
+    if (!activityList) return;
+    
+    const results = await getQuizResults();
+    
+    // Clear container
+    activityList.innerHTML = '';
+    
+    if (results.length === 0) {
+        activityList.innerHTML = '<div class="empty-state">No recent activity</div>';
+        return;
+    }
+    
+    // Sort by date (newest first)
+    const sortedResults = [...results].sort((a, b) => 
+        new Date(b.date) - new Date(a.date)
+    );
+    
+    // Create activity items HTML with click handlers
+    sortedResults.forEach((r, index) => {
+        const date = new Date(r.date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const accuracy = Math.round((r.correctAnswers / r.totalQuestions) * 100);
+        const perfectClass = accuracy === 100 ? 'perfect' : '';
+        
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        activityItem.setAttribute('data-index', index);
+        activityItem.style.cursor = 'pointer'; // Make it look clickable
+        
+        activityItem.innerHTML = `
+            <div class="activity-icon">
+                <i class="fas ${accuracy >= 80 ? 'fa-star' : 'fa-question'}"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-title">${r.folderName || 'Quiz'} - ${r.correctAnswers}/${r.totalQuestions}</div>
+                <div class="activity-time">${date}</div>
+            </div>
+            <span class="activity-badge ${perfectClass}">
+                ${accuracy}%
+            </span>
+        `;
+        
+        // Add click handler
+        activityItem.addEventListener('click', () => handleActivityClick(r));
+        
+        activityList.appendChild(activityItem);
+    });
+    
+    // Remove any existing show more button
+    const existingBtn = document.querySelector('.show-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    // Add expand/collapse functionality if more than 5 items
+    if (sortedResults.length > 5) {
+        createExpandButton(activityList, sortedResults.length);
+    } else {
+        // If 5 or fewer items, remove collapsed class
+        activityList.classList.remove('collapsed');
+    }
+}
 
 function createExpandButton(container, totalItems) {
     // Create button
@@ -2313,88 +2450,7 @@ function createExpandButton(container, totalItems) {
     // Add collapsed class for gradient effect
     container.classList.add('collapsed');
 }
-// =============================================
-// Reset Activity Expand State
-// =============================================
-
-function resetActivityExpand() {
-    console.log("Resetting activity expand state...");
-    activityExpanded = false;
-    
-    const container = document.getElementById('recentActivityList');
-    if (!container) return;
-    
-    // Remove collapsed class
-    container.classList.remove('collapsed');
-    
-    // Get all items
-    const allItems = container.querySelectorAll('.activity-item');
-    
-    // Show all items temporarily
-    allItems.forEach(item => item.style.display = 'flex');
-    
-    // Get total items
-    const totalItems = allItems.length;
-    
-    // Remove existing button
-    const existingBtn = document.querySelector('.show-more-btn');
-    if (existingBtn) existingBtn.remove();
-    
-    // If more than 5, reset to collapsed state
-    if (totalItems > 5) {
-        // Hide items after first 5
-        allItems.forEach((item, index) => {
-            if (index >= 5) {
-                item.style.display = 'none';
-            }
-        });
-        
-        // Add collapsed class
-        container.classList.add('collapsed');
-        
-        // Create new button
-        const showMoreBtn = document.createElement('button');
-        showMoreBtn.className = 'show-more-btn';
-        showMoreBtn.id = 'recentActivityShowMoreBtn';
-        showMoreBtn.innerHTML = `
-            <i class="fas fa-chevron-down"></i>
-            <span>Show More (${totalItems - 5} more)</span>
-        `;
-        
-        // Add click handler
-        showMoreBtn.addEventListener('click', function() {
-            const allItems = container.querySelectorAll('.activity-item');
-            const icon = this.querySelector('i');
-            const span = this.querySelector('span');
-            
-            if (!activityExpanded) {
-                allItems.forEach(item => item.style.display = 'flex');
-                icon.className = 'fas fa-chevron-up';
-                span.textContent = 'Show Less';
-                this.classList.add('expanded');
-                container.classList.remove('collapsed');
-            } else {
-                allItems.forEach((item, index) => {
-                    if (index >= 5) {
-                        item.style.display = 'none';
-                    } else {
-                        item.style.display = 'flex';
-                    }
-                });
-                icon.className = 'fas fa-chevron-down';
-                span.textContent = `Show More (${totalItems - 5} more)`;
-                this.classList.remove('expanded');
-                container.classList.add('collapsed');
-            }
-            
-            activityExpanded = !activityExpanded;
-        });
-        
-        container.parentNode.appendChild(showMoreBtn);
-    }
-}
 window.handleActivityClick = handleActivityClick;
 window.previousReviewQuestion = previousReviewQuestion;
 window.nextReviewQuestion = nextReviewQuestion;
 window.resetActivityExpand = resetActivityExpand;  // ✅ YEH ADD KARO
-
