@@ -2313,6 +2313,86 @@ function createExpandButton(container, totalItems) {
     // Add collapsed class for gradient effect
     container.classList.add('collapsed');
 }
+// =============================================
+// Reset Activity Expand State
+// =============================================
+
+function resetActivityExpand() {
+    console.log("Resetting activity expand state...");
+    activityExpanded = false;
+    
+    const container = document.getElementById('recentActivityList');
+    if (!container) return;
+    
+    // Remove collapsed class
+    container.classList.remove('collapsed');
+    
+    // Get all items
+    const allItems = container.querySelectorAll('.activity-item');
+    
+    // Show all items temporarily
+    allItems.forEach(item => item.style.display = 'flex');
+    
+    // Get total items
+    const totalItems = allItems.length;
+    
+    // Remove existing button
+    const existingBtn = document.querySelector('.show-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    // If more than 5, reset to collapsed state
+    if (totalItems > 5) {
+        // Hide items after first 5
+        allItems.forEach((item, index) => {
+            if (index >= 5) {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Add collapsed class
+        container.classList.add('collapsed');
+        
+        // Create new button
+        const showMoreBtn = document.createElement('button');
+        showMoreBtn.className = 'show-more-btn';
+        showMoreBtn.id = 'recentActivityShowMoreBtn';
+        showMoreBtn.innerHTML = `
+            <i class="fas fa-chevron-down"></i>
+            <span>Show More (${totalItems - 5} more)</span>
+        `;
+        
+        // Add click handler
+        showMoreBtn.addEventListener('click', function() {
+            const allItems = container.querySelectorAll('.activity-item');
+            const icon = this.querySelector('i');
+            const span = this.querySelector('span');
+            
+            if (!activityExpanded) {
+                allItems.forEach(item => item.style.display = 'flex');
+                icon.className = 'fas fa-chevron-up';
+                span.textContent = 'Show Less';
+                this.classList.add('expanded');
+                container.classList.remove('collapsed');
+            } else {
+                allItems.forEach((item, index) => {
+                    if (index >= 5) {
+                        item.style.display = 'none';
+                    } else {
+                        item.style.display = 'flex';
+                    }
+                });
+                icon.className = 'fas fa-chevron-down';
+                span.textContent = `Show More (${totalItems - 5} more)`;
+                this.classList.remove('expanded');
+                container.classList.add('collapsed');
+            }
+            
+            activityExpanded = !activityExpanded;
+        });
+        
+        container.parentNode.appendChild(showMoreBtn);
+    }
+}
 window.handleActivityClick = handleActivityClick;
 window.previousReviewQuestion = previousReviewQuestion;
 window.nextReviewQuestion = nextReviewQuestion;
