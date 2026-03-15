@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>QuizMaster Pro | Smart Learning Assistant</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add this with other scripts -->
+    <script src="addQuestion.js" defer></script>
+    <script src="bulkAddJson.js" defer></script>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="script.js" defer></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="goal.css">
+    <link rel="stylesheet" href="pomodoro.css">
+    <link rel="stylesheet" href="mixed.css">
+    <link rel="stylesheet" href="rapid.css">
+    <link rel="stylesheet" href="difficult.css">
+    <link rel="stylesheet" href="notes.css">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+</head>
+
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+
+        <!-- Header/Navigation -->
+        <header class="glass-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <button id="menuToggle" class="icon-btn" onclick="toggleMenu()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="logo">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>QuizMaster Pro</span>
+                    </div>
+                </div>
+
+                <div class="header-center">
+                    <select id="folderSelect" class="folder-select" onchange="selectFolder()">
+                        <option value="" disabled selected>📁 Select folder</option>
+                    </select>
+
+                    <button id="startQuizBtn" class="primary-btn hidden" onclick="startQuiz()">
+                        <i class="fas fa-play"></i> Start
+                    </button>
+                </div>
+
+                <div class="header-right">
+                    <div class="medal-display">
+                        <span class="medal bronze" title="Daily Streak">
+                            <i class="fas fa-medal"></i> <span id="bronze-count">0</span>
+                        </span>
+                        <span class="medal silver" title="Weekly Streak">
+                            <i class="fas fa-medal" style="color: #c0c0c0;"></i> <span id="silver-count">0</span>
+                        </span>
+                        <span class="medal gold" title="Monthly Streak">
+                            <i class="fas fa-crown"></i> <span id="gold-count">0</span>
+                        </span>
+                    </div>
+
+                    <button id="homeBtn" class="icon-btn" onclick="goHome()">
+                        <i class="fas fa-home"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar Menu -->
+        <div id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Menu</h3>
+                <button class="icon-btn" onclick="toggleMenu()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="sidebar-content">
+                <div class="menu-section">
+                    <h4>Quiz Management</h4>
+                    <button class="menu-item" onclick="createFolder()">
+                        <i class="fas fa-folder-plus"></i> Create Folder
+                    </button>
+                    <button class="menu-item" onclick="showAddQuestionDialog()">
+                        <i class="fas fa-plus-circle"></i> Add Question
+                    </button>
+                    <!-- Sidebar menu mein ye button add karo -->
+                    <button class="menu-item" onclick="showBulkAddJSON()">
+                        <i class="fas fa-code"></i> Bulk Add JSON
+                    </button>
+                    <button class="menu-item" onclick="shuffleQuiz()">
+                        <i class="fas fa-random"></i> Shuffle Quiz
+                    </button>
+                    <button class="menu-item" onclick="confirmDeleteFolder()">
+                        <i class="fas fa-trash-alt"></i> Delete Folder
+                    </button>
+                </div>
+
+                <div class="menu-section">
+                    <h4>Study Modes</h4>
+                    <button class="menu-item" onclick="showFlashcards()">
+                        <i class="fas fa-layer-group"></i> Flashcards
+                    </button>
+                    <button class="menu-item" onclick="startRapidRound()">
+                        <i class="fas fa-bolt"></i> Rapid Round
+                    </button>
+                    <button class="menu-item" onclick="showDifficultQuestions()">
+                        <i class="fas fa-exclamation-triangle"></i> Difficult Questions
+                    </button>
+                    <button class="menu-item" onclick="startPomodoroSetup()">
+                        <i class="fas fa-clock"></i> Pomodoro Timer
+                    </button>
+                </div>
+
+                <div class="menu-section">
+                    <h4>Goals & Analytics</h4>
+                    <button class="menu-item" onclick="setFolderGoals()">
+                        <i class="fas fa-bullseye"></i> Set Goals
+                    </button>
+                    <button class="menu-item" onclick="showAnalysis()">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </button>
+                    <button class="menu-item" onclick="showNotes()">
+                        <i class="fas fa-book-open"></i> Learning Journal
+                    </button>
+                </div>
+
+                <div class="menu-section">
+                    <h4>Data Management</h4>
+                    <button class="menu-item" onclick="document.getElementById('jsonFileInputUpload').click()">
+                        <i class="fas fa-upload"></i> Upload JSON
+                    </button>
+                    <button class="menu-item" onclick="downloadData()">
+                        <i class="fas fa-download"></i> Download Data
+                    </button>
+                    <button class="menu-item" onclick="document.getElementById('jsonFileInputRestore').click()">
+                        <i class="fas fa-undo-alt"></i> Restore Data
+                    </button>
+                    <button class="menu-item" onclick="clearMemory()">
+                        <i class="fas fa-eraser"></i> Clear Memory
+                    </button>
+                </div>
+
+                <div class="menu-section">
+                    <h4>Appearance</h4>
+                    <button class="menu-item" onclick="toggleTheme()">
+                        <i class="fas fa-palette"></i> Toggle Theme
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hidden file inputs -->
+            <input type="file" id="jsonFileInputUpload" style="display: none;" accept=".json"
+                onchange="handleFileUpload(event)">
+            <input type="file" id="jsonFileInputRestore" style="display: none;" accept=".json"
+                onchange="restoreData(event)">
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Quiz Selection View -->
+            <div id="quizSelection" class="view active">
+                <div class="welcome-card glass-card">
+                    <h1>Welcome back, Learner! 👋</h1>
+                    <p>Select a folder to begin your quiz journey</p>
+                </div>
+
+                <!-- Quick Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-question-circle"></i>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Questions</span>
+                            <span class="stat-value" id="totalQuestionsStat">0</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-info">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value" id="accuracyStat">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-fire"></i>
+                        <div class="stat-info">
+                            <span class="stat-label">Streak</span>
+                            <span class="stat-value" id="streakStat">0</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-clock"></i>
+                        <div class="stat-info">
+                            <span class="stat-label">Study Time</span>
+                            <span class="stat-value" id="studyTimeStat">0h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz Range Selection -->
+                <div id="quizRangeContainer" class="range-card glass-card hidden">
+                    <h3>Quiz Settings</h3>
+                    <div class="range-controls">
+                        <div class="range-info">
+                            <span>Total Questions: <strong id="totalQuestions">0</strong></span>
+                        </div>
+                        <div class="range-inputs">
+                            <div class="input-group">
+                                <label>From:</label>
+                                <input type="number" id="startIndex" min="1" value="1" class="number-input">
+                            </div>
+                            <div class="input-group">
+                                <label>To:</label>
+                                <input type="number" id="endIndex" min="1" value="1" class="number-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz Options -->
+                <div id="quizOptions" class="options-card hidden">
+                    <button class="primary-btn large" onclick="startQuiz('complete')">
+                        <i class="fas fa-play"></i> Start Complete Quiz
+                    </button>
+                    <button class="secondary-btn large" onclick="startQuiz('difficult')">
+                        <i class="fas fa-exclamation-circle"></i> Practice Difficult
+                    </button>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="recent-activity glass-card">
+                    <h3>Recent Activity</h3>
+                    <div id="recentActivityList" class="activity-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Container (Hidden by default) -->
+            <div id="quizContainer" class="quiz-container glass-card hidden">
+                <div class="quiz-header">
+                    <div class="quiz-progress">
+                        <div class="progress-circle">
+                            <span id="current-question">1</span>/<span id="total-questions">0</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="quizProgressBar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="quiz-timer" class="quiz-timer">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span id="time-display">00:00</span>
+                    </div>
+                </div>
+
+                <div class="quiz-body">
+                    <h2 id="question-text" class="question-text">Question will appear here</h2>
+                    <div id="options" class="options-grid"></div>
+                </div>
+
+                <div class="quiz-footer">
+                    <button class="mark-difficult-btn" onclick="markCurrentAsDifficult()">
+                        <i class="fas fa-flag"></i> Mark as Difficult
+                    </button>
+                </div>
+            </div>
+
+            <!-- Flashcard Container -->
+            <div id="flashcardContainer" class="flashcard-container hidden"></div>
+
+            <!-- Analysis Container -->
+            <div id="analysisContainer" class="analysis-container hidden"></div>
+
+            <!-- Notes Container -->
+            <div id="notesContainer" class="notes-container hidden"></div>
+        </main>
+
+        <!-- Floating Action Button -->
+        <button class="fab" onclick="showQuickActions()">
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <!-- Quick Actions Menu -->
+        <div id="quickActions" class="quick-actions hidden">
+            <button onclick="showFlashcards()"><i class="fas fa-layer-group"></i> Flashcards</button>
+            <button onclick="startRapidRound()"><i class="fas fa-bolt"></i> Rapid Round</button>
+            <button onclick="showNotes()"><i class="fas fa-book-open"></i> Notes</button>
+            <button onclick="startPomodoroSetup()"><i class="fas fa-clock"></i> Pomodoro</button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="glass-footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <div class="footer-links">
+                        <button onclick="goHome()"><i class="fas fa-home"></i> Home</button>
+                        <button onclick="showAnalysis()"><i class="fas fa-chart-bar"></i> Analytics</button>
+                        <button onclick="showFlashcards()"><i class="fas fa-layer-group"></i> Flashcards</button>
+                        <button onclick="showNotes()"><i class="fas fa-book-open"></i> Journal</button>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Popular Folders</h4>
+                    <div id="frequentFolders" class="folder-links">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Active Goals</h4>
+                    <div id="footerGoals" class="goal-links">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Statistics</h4>
+                    <div class="footer-stats">
+                        <div><i class="fas fa-medal bronze-icon"></i> <span id="footer-bronze">0</span></div>
+                        <div><i class="fas fa-medal silver-icon"></i> <span id="footer-silver">0</span></div>
+                        <div><i class="fas fa-crown gold-icon"></i> <span id="footer-gold">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>© <span id="current-year"></span> QuizMaster Pro. Made for learners, by learners.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(() => console.log("Service Worker Registered"));
+        }
+    </script>
+
+    <!-- Scripts -->
+    <script src="script.js" defer></script>
+    <script src="goal.js" defer></script>
+    <script src="rapid.js" defer></script>
+    <script src="difficult.js" defer></script>
+    <script src="pomodoro.js" defer></script>
+    <script src="mixed.js" defer></script>
+    <script src="notes.js" defer></script>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+</body>
+
+</html>
